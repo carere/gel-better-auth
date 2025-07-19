@@ -1,0 +1,62 @@
+{
+  "name": "@carere/gel-better-auth",
+  "author": "Kevin Abatan <abatan.k@gmail.com> (https://github.com/carere)",
+  "description": "Better-auth database adapter for gel/edgedb",
+  "type": "module",
+  "keywords": [
+    "better-auth",
+    "gel",
+    "edgedb",
+    "typescript",
+    "better-auth-adapter"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "bugs": "https://github.com/carere/gel-better-auth/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/carere/gel-better-auth.git"
+  },
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  },
+  "scripts": {
+    "format": "biome format --write --no-errors-on-unmatched .",
+    "lint": "biome check --write .",
+    "knip": "knip",
+    "check": "tsc --build",
+    "test": "vitest"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "gel": "^2.1.1"
+  },
+  "peerDependencies": {
+    "typescript": "^5.8.3",
+    "better-auth": "^1.2.12"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@biomejs/biome": "latest",
+    "@commitlint/cli": "latest",
+    "@commitlint/config-conventional": "latest",
+    "knip": "latest",
+    "lefthook": "latest",
+    "sort-package-json": "latest",
+    "vitest": "latest"
+  }
+}
