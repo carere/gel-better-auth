@@ -9,6 +9,11 @@ export const auth = betterAuth({
   user: {
     modelName: "users",
     additionalFields: {
+      fruit: {
+        type: ["banana", "apple", "orange", "grape", "pineapple"],
+        required: true,
+        unique: true,
+      },
       metadata: {
         type: "string",
         fieldName: "metadatas",

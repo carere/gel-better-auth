@@ -1,5 +1,7 @@
 module auth {
 
+  scalar type Fruit extending enum<banana, apple, orange, grape, pineapple>;
+
   type users {
     required name: str;
     required email: str {
@@ -13,6 +15,9 @@ module auth {
     banned: bool;
     banReason: str;
     banExpires: datetime;
+    required fruit: Fruit {
+      constraint exclusive;
+    }
     metadatas: session {
       constraint exclusive;
       on target delete delete source;
@@ -84,4 +89,5 @@ module auth {
     required status: str;
     required expiresAt: datetime;
     required inviterId: user;
-  }}
+  }
+}

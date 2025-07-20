@@ -5,7 +5,6 @@ import type { Client } from "gel";
 import { join, map, pipe, values } from "remeda";
 import { generateFieldsString } from "./utils";
 
-// Your custom adapter config options
 interface GelAdapterConfig {
   /**
    * Helps you debug issues with the adapter.
@@ -17,6 +16,7 @@ interface GelAdapterConfig {
   usePlural?: boolean;
   /**
    * The name of the generated module.
+   * defaults to "auth"
    */
   moduleName?: string;
 }
@@ -33,54 +33,52 @@ export const gelAdapter = (_: Client, config: GelAdapterConfig = { moduleName: "
       supportsBooleans: true,
       supportsNumericIds: false,
     },
-    adapter: () => {
-      return {
-        create: async () => {
-          throw new Error("Not implemented");
-        },
-        update: async () => {
-          throw new Error("Not implemented");
-        },
-        updateMany: async () => {
-          throw new Error("Not implemented");
-        },
-        delete: async () => {
-          throw new Error("Not implemented");
-        },
-        count: async () => {
-          throw new Error("Not implemented");
-        },
-        findOne: async () => {
-          throw new Error("Not implemented");
-        },
-        findMany: async () => {
-          throw new Error("Not implemented");
-        },
-        deleteMany: async () => {
-          throw new Error("Not implemented");
-        },
-        createSchema: async ({ tables, file = `./dbschema/${config.moduleName}.gel` }) => {
-          const schema = pipe(
-            values(tables),
-            map(({ modelName, fields }) => {
-              const { scalarEnumTypes, fields: fieldString } = generateFieldsString(fields);
-              return pipe(
-                "",
-                (str) =>
-                  values(scalarEnumTypes).length > 0
-                    ? `${str}  ${values(scalarEnumTypes).join("\n  ")}\n\n`
-                    : str,
-                (str) => `${str}  type ${modelName} {\n    ${fieldString}\n  }`,
-              );
-            }),
-            join("\n\n"),
-            (str) => `module ${config.moduleName} {\n\n${str}}\n`,
-          );
+    adapter: () => ({
+      create: async () => {
+        throw new Error("Not implemented");
+      },
+      update: async () => {
+        throw new Error("Not implemented");
+      },
+      updateMany: async () => {
+        throw new Error("Not implemented");
+      },
+      delete: async () => {
+        throw new Error("Not implemented");
+      },
+      count: async () => {
+        throw new Error("Not implemented");
+      },
+      findOne: async () => {
+        throw new Error("Not implemented");
+      },
+      findMany: async () => {
+        throw new Error("Not implemented");
+      },
+      deleteMany: async () => {
+        throw new Error("Not implemented");
+      },
+      createSchema: async ({ tables, file = `./dbschema/${config.moduleName}.gel` }) => {
+        const schema = pipe(
+          values(tables),
+          map(({ modelName, fields }) => {
+            const { scalarEnumTypes, fields: fieldString } = generateFieldsString(fields);
+            return pipe(
+              "",
+              (str) =>
+                values(scalarEnumTypes).length > 0
+                  ? `${str}  ${values(scalarEnumTypes).join("\n  ")}\n\n`
+                  : str,
+              (str) => `${str}  type ${modelName} {\n    ${fieldString}\n  }`,
+            );
+          }),
+          join("\n\n"),
+          (str) => `module ${config.moduleName} {\n\n${str}\n}\n`,
+        );
 
-          await writeFile(nodeJoin(process.cwd(), file), schema);
+        await writeFile(nodeJoin(process.cwd(), file), schema);
 
-          return { path: file, append: false, overwrite: true, code: schema };
-        },
-      };
-    },
+        return { path: file, append: false, overwrite: true, code: schema };
+      },
+    }),
   });
