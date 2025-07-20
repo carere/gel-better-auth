@@ -1,0 +1,87 @@
+module auth {
+
+  type users {
+    required name: str;
+    required email: str {
+      constraint exclusive;
+    }
+    required emailVerified: bool;
+    image: str;
+    required createdAt: datetime;
+    required updatedAt: datetime;
+    role: str;
+    banned: bool;
+    banReason: str;
+    banExpires: datetime;
+    metadatas: session {
+      constraint exclusive;
+      on target delete delete source;
+    }
+  }
+
+  type session {
+    required expiresAt: datetime;
+    required token: str {
+      constraint exclusive;
+    }
+    required createdAt: datetime;
+    required updatedAt: datetime;
+    ipAddress: str;
+    userAgent: str;
+    required userId: users {
+      on target delete delete source;
+    }
+    activeOrganizationId: str;
+    impersonatedBy: str;
+  }
+
+  type account {
+    required accountId: str;
+    required providerId: str;
+    required userId: users {
+      on target delete delete source;
+    }
+    accessToken: str;
+    refreshToken: str;
+    idToken: str;
+    accessTokenExpiresAt: datetime;
+    refreshTokenExpiresAt: datetime;
+    scope: str;
+    password: str;
+    required createdAt: datetime;
+    required updatedAt: datetime;
+  }
+
+  type verification {
+    required identifier: str;
+    required value: str;
+    required expiresAt: datetime;
+    createdAt: datetime;
+    updatedAt: datetime;
+  }
+
+  type organization {
+    required name: str;
+    slug: str {
+      constraint exclusive;
+    }
+    logo: str;
+    required createdAt: datetime;
+    metadata: str;
+  }
+
+  type member {
+    required organizationId: organization;
+    required userId: user;
+    required role: str;
+    required createdAt: datetime;
+  }
+
+  type invitation {
+    required organizationId: organization;
+    required email: str;
+    role: str;
+    required status: str;
+    required expiresAt: datetime;
+    required inviterId: user;
+  }}

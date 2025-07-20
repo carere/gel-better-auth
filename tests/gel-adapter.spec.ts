@@ -1,6 +1,6 @@
 import { runAdapterTest } from "better-auth/adapters/test";
 import { createClient } from "gel";
-import { beforeAll, describe } from "vitest";
+import { describe } from "vitest";
 import { gelAdapter } from "../src";
 
 describe("Gel Adapter Tests", async () => {
@@ -11,11 +11,11 @@ describe("Gel Adapter Tests", async () => {
     },
   });
 
-  beforeAll(async () => {
-    await db.execute("delete session;");
-    await db.execute("delete account;");
-    await db.execute("delete user;");
-  });
+  // beforeAll(async () => {
+  //   await db.execute("delete session;");
+  //   await db.execute("delete account;");
+  //   await db.execute("delete user;");
+  // });
 
   await runAdapterTest({
     getAdapter: async (betterAuthOptions = {}) => {

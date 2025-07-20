@@ -7,6 +7,9 @@
     "source.organizeImports.biome": "explicit",
     "source.removeUnusedImports": "explicit"
   },
+  "[gel]": {
+    "editor.defaultFormatter": "gel.edgedb"
+  },
   "[yaml,yml]": {
     "editor.defaultFormatter": "redhat.vscode-yaml"
   },
