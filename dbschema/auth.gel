@@ -1,8 +1,6 @@
 module auth {
 
-  scalar type Fruit extending enum<banana, apple, orange, grape, pineapple>;
-
-  type users {
+  type user {
     required name: str;
     required email: str {
       constraint exclusive;
@@ -11,18 +9,7 @@ module auth {
     image: str;
     required createdAt: datetime;
     required updatedAt: datetime;
-    role: str;
-    banned: bool;
-    banReason: str;
-    banExpires: datetime;
-    required fruit: Fruit {
-      constraint exclusive;
-    }
-    metadatas: session {
-      constraint exclusive;
-      on target delete delete source;
-    }
-  }
+  };
 
   type session {
     required expiresAt: datetime;
@@ -33,17 +20,15 @@ module auth {
     required updatedAt: datetime;
     ipAddress: str;
     userAgent: str;
-    required userId: users {
+    required userId: user {
       on target delete delete source;
     }
-    activeOrganizationId: str;
-    impersonatedBy: str;
-  }
+  };
 
   type account {
     required accountId: str;
     required providerId: str;
-    required userId: users {
+    required userId: user {
       on target delete delete source;
     }
     accessToken: str;
@@ -55,7 +40,7 @@ module auth {
     password: str;
     required createdAt: datetime;
     required updatedAt: datetime;
-  }
+  };
 
   type verification {
     required identifier: str;
@@ -63,31 +48,5 @@ module auth {
     required expiresAt: datetime;
     createdAt: datetime;
     updatedAt: datetime;
-  }
-
-  type organization {
-    required name: str;
-    slug: str {
-      constraint exclusive;
-    }
-    logo: str;
-    required createdAt: datetime;
-    metadata: str;
-  }
-
-  type member {
-    required organizationId: organization;
-    required userId: user;
-    required role: str;
-    required createdAt: datetime;
-  }
-
-  type invitation {
-    required organizationId: organization;
-    required email: str;
-    role: str;
-    required status: str;
-    required expiresAt: datetime;
-    required inviterId: user;
-  }
+  };
 }

@@ -2,7 +2,7 @@ import { writeFile } from "node:fs/promises";
 import { join as nodeJoin } from "node:path";
 import { type AdapterDebugLogs, createAdapter } from "better-auth/adapters";
 import type { Client } from "gel";
-import { join, map, pipe, values } from "remeda";
+import { join, map, merge, pipe, values } from "remeda";
 import { generateFieldsString } from "./utils";
 
 interface GelAdapterConfig {
@@ -59,21 +59,23 @@ export const gelAdapter = (_: Client, config: GelAdapterConfig = { moduleName: "
         throw new Error("Not implemented");
       },
       createSchema: async ({ tables, file = `./dbschema/${config.moduleName}.gel` }) => {
+        let rootScalarEnumTypes: Record<Capitalize<string>, string> = {};
         const schema = pipe(
           values(tables),
           map(({ modelName, fields }) => {
             const { scalarEnumTypes, fields: fieldString } = generateFieldsString(fields);
-            return pipe(
-              "",
-              (str) =>
-                values(scalarEnumTypes).length > 0
-                  ? `${str}  ${values(scalarEnumTypes).join("\n  ")}\n\n`
-                  : str,
-              (str) => `${str}  type ${modelName} {\n    ${fieldString}\n  }`,
-            );
+            rootScalarEnumTypes = merge(rootScalarEnumTypes, scalarEnumTypes);
+            return `  type ${modelName} {\n    ${fieldString}\n  };`;
           }),
           join("\n\n"),
-          (str) => `module ${config.moduleName} {\n\n${str}\n}\n`,
+          (str) => {
+            const scalarEnumTypesString =
+              values(rootScalarEnumTypes).length > 0
+                ? `  ${values(rootScalarEnumTypes).join("\n  ")}\n\n`
+                : "";
+
+            return `module ${config.moduleName} {\n\n${scalarEnumTypesString}${str}\n}\n`;
+          },
         );
 
         await writeFile(nodeJoin(process.cwd(), file), schema);
