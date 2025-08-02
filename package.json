@@ -1,14 +1,12 @@
 {
   "name": "@carere/gel-better-auth",
   "author": "Kevin Abatan <abatan.k@gmail.com> (https://github.com/carere)",
-  "description": "Better-auth database adapter for gel/edgedb",
+  "description": "Gel database adapter for better-auth",
   "type": "module",
   "keywords": [
     "better-auth",
     "gel",
-    "edgedb",
-    "typescript",
-    "better-auth-adapter"
+    "typescript"
   ],
   "publishConfig": {
     "access": "public"
@@ -32,7 +30,8 @@
     "lint": "biome check --write .",
     "knip": "knip",
     "check": "tsc --build",
-    "test": "vitest"
+    "test": "vitest",
+    "generate": "bunx @better-auth/cli generate"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -43,13 +42,12 @@
     }
   },
   "dependencies": {
-    "gel": "^2.1.1",
     "remeda": "^2.26.1",
     "ts-pattern": "^5.7.1"
   },
   "peerDependencies": {
-    "typescript": "^5.8.3",
-    "better-auth": "^1.2.12"
+    "better-auth": "^1.2.12",
+    "gel": "^2.1.1"
   },
   "devDependencies": {
     "@types/bun": "latest",
@@ -59,6 +57,7 @@
     "knip": "latest",
     "lefthook": "latest",
     "sort-package-json": "latest",
-    "vitest": "latest"
+    "vitest": "latest",
+    "typescript": "latest"
   }
 }

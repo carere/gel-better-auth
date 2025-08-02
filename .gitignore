@@ -10,6 +10,9 @@ dist
 coverage
 *.lcov
 
+# uneeded files
+auth.ts
+
 # logs
 logs
 _.log
