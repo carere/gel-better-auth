@@ -1,6 +1,105 @@
-import type { FieldAttribute, FieldType } from "better-auth/db";
-import { capitalize, entries, pipe } from "remeda";
+import type { CleanedWhere } from "better-auth/adapters";
+import type { BetterAuthDbSchema, FieldAttribute, FieldType } from "better-auth/db";
+import { capitalize, entries, filter, join, keys, map, pipe } from "remeda";
 import { match } from "ts-pattern";
+
+export const getGelType = (
+  field: string,
+  type: FieldType,
+  fieldName?: string,
+  operator?: string,
+): string => {
+  if (field === "id") {
+    // For 'in' operator with id field, use array<uuid>
+    return operator === "in" ? "array<uuid>" : "uuid";
+  }
+
+  return match(type)
+    .with("string", () => (operator === "in" ? "array<str>" : "str"))
+    .with("number", () => (operator === "in" ? "array<int>" : "int"))
+    .with("boolean", () => (operator === "in" ? "array<bool>" : "bool"))
+    .with("date", () => (operator === "in" ? "array<datetime>" : "datetime"))
+    .with("string[]", () => "array<str>")
+    .with("number[]", () => "array<int>")
+    .otherwise(() => capitalize(fieldName ?? field));
+};
+
+export const getGelOperator = (operator: string): string =>
+  match(operator)
+    .with("eq", () => "=")
+    .with("ne", () => "!=")
+    .with("lt", () => "<")
+    .with("lte", () => "<=")
+    .with("gt", () => ">")
+    .with("gte", () => ">=")
+    .with("in", () => "in")
+    .otherwise(() => "like");
+
+export const getModelFieldNameMapping = (
+  model: string,
+  schema: BetterAuthDbSchema,
+): Record<string, FieldAttribute<FieldType>> => {
+  const fields = schema[model]?.fields;
+
+  if (!fields) throw new Error(`Model ${model} not found in schema`);
+
+  const mapping: Record<string, FieldAttribute<FieldType>> = {};
+
+  for (const [key, field] of Object.entries(fields)) {
+    mapping[key] = field;
+    if (field.fieldName && field.fieldName !== key) {
+      mapping[field.fieldName] = field;
+    }
+  }
+
+  return mapping;
+};
+
+export const whereClause = (
+  where: CleanedWhere[],
+  model: string,
+  schema: BetterAuthDbSchema,
+): string => {
+  const fieldMapping = getModelFieldNameMapping(model, schema);
+
+  return pipe(
+    where,
+    map(({ connector, field, operator }, index) => {
+      const fieldAttributes = fieldMapping[field] as FieldAttribute<FieldType>;
+      const actualFieldName = fieldAttributes.fieldName ?? field;
+
+      return pipe(index === 0 ? "" : connector === "AND" ? "and " : "or ", (str) => {
+        const gelOperator = getGelOperator(operator);
+        const gelType = getGelType(field, fieldAttributes.type, actualFieldName, operator);
+
+        return match(operator)
+          .with(
+            "in",
+            () => `${str}.${field} ${gelOperator} array_unpack(<${gelType}>$${actualFieldName})`,
+          )
+          .otherwise(() => `${str}.${field} ${gelOperator} <${gelType}>$${actualFieldName}`);
+      });
+    }),
+    join("\n"),
+  );
+};
+
+export const selectClause = (model: string, schema: BetterAuthDbSchema, select?: string[]) => {
+  const fieldMapping = getModelFieldNameMapping(model, schema);
+  const fieldKeys = keys(schema[model]?.fields ?? {});
+
+  return pipe(
+    fieldKeys,
+    filter((key) => (select ? select.includes(fieldMapping[key]?.fieldName ?? key) : true)),
+    map((key) => {
+      let keyStr = `${key}`;
+      if (fieldMapping[key]?.fieldName && fieldMapping[key].fieldName !== key)
+        keyStr = `${fieldMapping[key].fieldName} := .${keyStr}`;
+      return keyStr;
+    }),
+    join(",\n  "),
+  );
+};
 
 export const generateFieldsString = (fields: Record<string, FieldAttribute<FieldType>>) => {
   const scalarEnumTypes: Record<Capitalize<string>, string> = {};

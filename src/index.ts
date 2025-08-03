@@ -2,9 +2,9 @@ import { writeFile } from "node:fs/promises";
 import { join as nodeJoin } from "node:path";
 import { type AdapterDebugLogs, createAdapter } from "better-auth/adapters";
 import type { Client } from "gel";
-import { capitalize, concat, join, keys, map, mapToObj, merge, pipe, values } from "remeda";
+import { filter, join, keys, map, mapToObj, merge, pipe, values } from "remeda";
 import { match } from "ts-pattern";
-import { generateFieldsString } from "./utils";
+import { generateFieldsString, getGelType, selectClause, whereClause } from "./utils";
 
 interface GelAdapterConfig {
   /**
@@ -38,30 +38,30 @@ export const gelAdapter = (db: Client, config: GelAdapterConfig) =>
     adapter: (options) => {
       return {
         create: async ({ data, model, select }) => {
+          const dataKeys = keys(data) as string[];
+          const fieldKeys = keys(options.schema[model]?.fields ?? {});
+
           const query = `
-select (
-  insert ${config.moduleName ?? "default"}::${model} {
-    ${pipe(
-      keys(data) as string[],
-      map((key) => {
-        console.log("[Create] Key: ", key);
-        const fieldAttributes = options.getFieldAttributes({ model, field: key });
-        //TODO: Create method which return the fieldAttributes depending on the key or the fieldName
-        return `${key} := <${match(fieldAttributes.type)
-          .with("string", () => "str")
-          .with("number", () => "int")
-          .with("boolean", () => "bool")
-          .with("date", () => "datetime")
-          .with("string[]", () => "array<str>")
-          .with("number[]", () => "array<int>")
-          .otherwise(() => capitalize(fieldAttributes.fieldName ?? key))}>$${key}`;
-      }),
-      join(",\n    "),
-    )}
-  }
-) {
-  ${pipe(select ?? concat(keys(data) as string[], ["id"]), join(",\n  "))}
-}`;
+          select (
+            insert ${config.moduleName ?? "default"}::${model} {
+              ${pipe(
+                fieldKeys,
+                filter((key) =>
+                  dataKeys.includes(options.getFieldName({ model, field: key }) ?? key),
+                ),
+                map((key) => {
+                  const fieldName = options.getFieldName({ model, field: key });
+                  const fieldAttributes = options.getFieldAttributes({ model, field: key });
+                  return `${key} := <${getGelType(key, fieldAttributes.type, fieldName)}>$${fieldName}`;
+                }),
+                join(",\n    "),
+              )}
+            }
+          ) {
+            ${selectClause(model, options.schema, select)}
+          }`;
+
+          options.debugLog("[Create] Query: ", query);
 
           return await db.queryRequiredSingle(query, data);
         },
@@ -78,58 +78,62 @@ select (
           throw new Error("Not implemented");
         },
         findOne: async ({ model, where, select }) => {
-          const fieldKeys = keys(options.schema[model]?.fields ?? {});
-
-          const whereClause = pipe(
-            where,
-            map(({ connector, field, operator }, index) => {
-              console.log("[Where Clause] Field: ", field);
-              const fieldAttributes = options.getFieldAttributes({ model, field });
-
-              return pipe(
-                index === 0 ? "" : connector === "AND" ? "and " : "or ",
-                (str) =>
-                  `${str}.${fieldAttributes.fieldName ?? field} ${match(operator)
-                    .with("eq", () => "=")
-                    .with("ne", () => "!=")
-                    .with("lt", () => "<")
-                    .with("lte", () => "<=")
-                    .with("gt", () => ">")
-                    .with("gte", () => ">=")
-                    .with("in", () => "in")
-                    .with("contains", () => "like")
-                    .with("starts_with", () => "like")
-                    .with("ends_with", () => "like")
-                    .exhaustive()} <${
-                    field === "id"
-                      ? "uuid"
-                      : match(fieldAttributes.type)
-                          .with("string", () => "str")
-                          .with("number", () => "int")
-                          .with("boolean", () => "bool")
-                          .with("date", () => "datetime")
-                          .with("string[]", () => "array<str>")
-                          .with("number[]", () => "array<int>")
-                          .otherwise(() => capitalize(fieldAttributes.fieldName ?? field))
-                  }>$${fieldAttributes.fieldName ?? field}`,
-              );
-            }),
-            join("\n"),
-          );
+          const whereClauseString = whereClause(where, model, options.schema);
 
           const query = `
-select ${config.moduleName ?? "default"}::${model} {
-  ${pipe(select ?? fieldKeys, join(",\n  "))},
-} filter ${whereClause} limit 1`;
+          select ${config.moduleName ?? "default"}::${model} {
+            ${selectClause(model, options.schema, select)}
+          } filter ${whereClauseString} limit 1`;
 
           options.debugLog("[Find One] Query: ", query);
 
-          const data = mapToObj(where, (v) => [v.field, v.value]);
+          const params = where
+            ? mapToObj(where, (v) => [
+                v.field,
+                match(v.operator)
+                  .with("contains", () => `%${v.value}%`)
+                  .with("starts_with", () => `${v.value}%`)
+                  .with("ends_with", () => `%${v.value}`)
+                  .otherwise(() => v.value),
+              ])
+            : undefined;
 
-          return await db.queryRequiredSingle(query, data);
+          return await db.queryRequiredSingle(query, params);
         },
-        findMany: async () => {
-          throw new Error("Not implemented");
+        findMany: async ({ model, where, limit, sortBy, offset }) => {
+          let query = `select ${config.moduleName ?? "default"}::${model} { * }`;
+
+          if (where && where.length > 0) {
+            const whereConditions = whereClause(where, model, options.schema);
+            query += ` filter ${whereConditions}`;
+          }
+
+          if (sortBy) {
+            query += ` order by .${sortBy.field} ${sortBy.direction === "desc" ? "desc" : "asc"}`;
+          }
+
+          if (offset) {
+            query += ` offset ${offset}`;
+          }
+
+          if (limit) {
+            query += ` limit ${limit}`;
+          }
+
+          options.debugLog("[Find Many] Query: ", query);
+
+          const params = where
+            ? mapToObj(where, (v) => [
+                v.field,
+                match(v.operator)
+                  .with("contains", () => `%${v.value}%`)
+                  .with("starts_with", () => `${v.value}%`)
+                  .with("ends_with", () => `%${v.value}`)
+                  .otherwise(() => v.value),
+              ])
+            : undefined;
+
+          return await db.query(query, params);
         },
         deleteMany: async () => {
           throw new Error("Not implemented");
