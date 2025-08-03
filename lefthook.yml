@@ -9,11 +9,7 @@ pre-commit:
       glob: "package.json"
       run: bun sort-package-json {staged_files}
       stage_fixed: true
-    lint:
+    check:
       glob: "*.{js,ts,tsx,json,jsonc,html,css}"
       run: bun biome check --write {staged_files}
-      stage_fixed: true
-    format:
-      glob: "*.{js,ts,tsx,json,jsonc,html,css}"
-      run: bun biome format --write {staged_files}
       stage_fixed: true

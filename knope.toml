@@ -3,6 +3,9 @@ versioned_files = ["package.json"]
 changelog = "CHANGELOG.md"
 assets = "gel-better-auth.tgz"
 
+[bot.releases]
+enabled = true
+
 [github]
 owner = "carere"
 repo = "gel-better-auth"
