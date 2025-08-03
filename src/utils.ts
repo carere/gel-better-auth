@@ -1,6 +1,6 @@
 import type { CleanedWhere } from "better-auth/adapters";
 import type { BetterAuthDbSchema, FieldAttribute, FieldType } from "better-auth/db";
-import { capitalize, entries, filter, join, keys, map, pipe } from "remeda";
+import { capitalize, entries, filter, join, keys, map, mapToObj, pipe } from "remeda";
 import { match } from "ts-pattern";
 
 export const getGelType = (
@@ -97,7 +97,7 @@ export const selectClause = (model: string, schema: BetterAuthDbSchema, select?:
         keyStr = `${fieldMapping[key].fieldName} := .${keyStr}`;
       return keyStr;
     }),
-    join(",\n  "),
+    join(", "),
   );
 };
 
@@ -153,4 +153,17 @@ export const generateFieldsString = (fields: Record<string, FieldAttribute<Field
       })
       .join("\n    "),
   };
+};
+
+export const formatWhereParams = (where: CleanedWhere[] | undefined) => {
+  return where
+    ? mapToObj(where, (v) => [
+        v.field,
+        match(v.operator)
+          .with("contains", () => `%${v.value}%`)
+          .with("starts_with", () => `${v.value}%`)
+          .with("ends_with", () => `%${v.value}`)
+          .otherwise(() => v.value),
+      ])
+    : undefined;
 };

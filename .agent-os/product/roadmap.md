@@ -25,9 +25,9 @@
 
 - [x] Create operation for inserting new records `M`
 - [x] FindOne operation for querying single records with where clauses `M`
-- [ ] FindMany operation for querying multiple records `S`
+- [x] FindMany operation for querying multiple records `S`
 - [ ] Update/UpdateMany operations for record modification `L`
-- [ ] Delete/DeleteMany operations for record removal `S`
+- [x] Delete/DeleteMany operations for record removal `S`
 - [ ] Count operation for record counting `S`
 
 ### Dependencies

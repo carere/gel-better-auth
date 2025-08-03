@@ -2,9 +2,14 @@ import { writeFile } from "node:fs/promises";
 import { join as nodeJoin } from "node:path";
 import { type AdapterDebugLogs, createAdapter } from "better-auth/adapters";
 import type { Client } from "gel";
-import { filter, join, keys, map, mapToObj, merge, pipe, values } from "remeda";
-import { match } from "ts-pattern";
-import { generateFieldsString, getGelType, selectClause, whereClause } from "./utils";
+import { filter, join, keys, map, merge, pipe, values } from "remeda";
+import {
+  formatWhereParams,
+  generateFieldsString,
+  getGelType,
+  selectClause,
+  whereClause,
+} from "./utils";
 
 interface GelAdapterConfig {
   /**
@@ -54,7 +59,7 @@ export const gelAdapter = (db: Client, config: GelAdapterConfig) =>
                   const fieldAttributes = options.getFieldAttributes({ model, field: key });
                   return `${key} := <${getGelType(key, fieldAttributes.type, fieldName)}>$${fieldName}`;
                 }),
-                join(",\n    "),
+                join(", "),
               )}
             }
           ) {
@@ -71,34 +76,29 @@ export const gelAdapter = (db: Client, config: GelAdapterConfig) =>
         updateMany: async () => {
           throw new Error("Not implemented");
         },
-        delete: async () => {
-          throw new Error("Not implemented");
+        delete: async ({ model, where }) => {
+          let query = `delete ${config.moduleName ?? "default"}::${model}`;
+
+          if (where && where.length > 0) {
+            query += ` filter ${whereClause(where, model, options.schema)}`;
+          }
+
+          options.debugLog("[Delete] Query: ", query);
+
+          await db.query(query, formatWhereParams(where));
         },
         count: async () => {
           throw new Error("Not implemented");
         },
         findOne: async ({ model, where, select }) => {
-          const whereClauseString = whereClause(where, model, options.schema);
-
           const query = `
           select ${config.moduleName ?? "default"}::${model} {
             ${selectClause(model, options.schema, select)}
-          } filter ${whereClauseString} limit 1`;
+          } filter ${whereClause(where, model, options.schema)} limit 1`;
 
           options.debugLog("[Find One] Query: ", query);
 
-          const params = where
-            ? mapToObj(where, (v) => [
-                v.field,
-                match(v.operator)
-                  .with("contains", () => `%${v.value}%`)
-                  .with("starts_with", () => `${v.value}%`)
-                  .with("ends_with", () => `%${v.value}`)
-                  .otherwise(() => v.value),
-              ])
-            : undefined;
-
-          return await db.queryRequiredSingle(query, params);
+          return await db.queryRequiredSingle(query, formatWhereParams(where));
         },
         findMany: async ({ model, where, limit, sortBy, offset }) => {
           let query = `select ${config.moduleName ?? "default"}::${model} { * }`;
@@ -122,21 +122,18 @@ export const gelAdapter = (db: Client, config: GelAdapterConfig) =>
 
           options.debugLog("[Find Many] Query: ", query);
 
-          const params = where
-            ? mapToObj(where, (v) => [
-                v.field,
-                match(v.operator)
-                  .with("contains", () => `%${v.value}%`)
-                  .with("starts_with", () => `${v.value}%`)
-                  .with("ends_with", () => `%${v.value}`)
-                  .otherwise(() => v.value),
-              ])
-            : undefined;
-
-          return await db.query(query, params);
+          return await db.query(query, formatWhereParams(where));
         },
-        deleteMany: async () => {
-          throw new Error("Not implemented");
+        deleteMany: async ({ model, where }) => {
+          let query = `delete ${config.moduleName ?? "default"}::${model}`;
+
+          if (where && where.length > 0) {
+            query += ` filter ${whereClause(where, model, options.schema)}`;
+          }
+
+          options.debugLog("[Delete Many] Query: ", query);
+
+          return (await db.query(query, formatWhereParams(where))).length;
         },
         createSchema: async ({ tables, file = `./dbschema/${config.moduleName}.gel` }) => {
           let rootScalarEnumTypes: Record<Capitalize<string>, string> = {};
