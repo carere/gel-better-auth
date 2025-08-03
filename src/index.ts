@@ -89,7 +89,7 @@ export const gelAdapter = (db: Client, config: GelAdapterConfig) =>
 
           return (
             await db.query(query, {
-              ...formatFilterParams(where),
+              ...formatFilterParams(where, model, options.schema),
               ...formatUpdateParams(update as Record<string, unknown>),
             })
           )[0] as null;
@@ -109,7 +109,7 @@ export const gelAdapter = (db: Client, config: GelAdapterConfig) =>
 
           return (
             await db.query(query, {
-              ...formatFilterParams(where),
+              ...formatFilterParams(where, model, options.schema),
               ...formatUpdateParams(update as Record<string, unknown>),
             })
           ).length;
@@ -123,7 +123,7 @@ export const gelAdapter = (db: Client, config: GelAdapterConfig) =>
 
           options.debugLog("[Delete] Query: ", query);
 
-          await db.query(query, formatFilterParams(where));
+          await db.query(query, formatFilterParams(where, model, options.schema));
         },
         count: async ({ model, where }) => {
           let query = `select ${moduleName}::${model}`;
@@ -137,7 +137,7 @@ export const gelAdapter = (db: Client, config: GelAdapterConfig) =>
 
           options.debugLog(query);
 
-          return (await db.query(query, formatFilterParams(where))) as unknown as number;
+          return (await db.query(query, formatFilterParams(where, model, options.schema))) as unknown as number;
         },
         findOne: async ({ model, where, select }) => {
           const query = `
@@ -147,7 +147,7 @@ export const gelAdapter = (db: Client, config: GelAdapterConfig) =>
 
           options.debugLog("[Find One] Query: ", query);
 
-          return (await db.query(query, formatFilterParams(where)))[0] as null;
+          return (await db.query(query, formatFilterParams(where, model, options.schema)))[0] as null;
         },
         findMany: async ({ model, where, limit, sortBy, offset }) => {
           let query = `select ${moduleName}::${model} { * }`;
@@ -171,7 +171,7 @@ export const gelAdapter = (db: Client, config: GelAdapterConfig) =>
 
           options.debugLog("[Find Many] Query: ", query);
 
-          return await db.query(query, formatFilterParams(where));
+          return await db.query(query, formatFilterParams(where, model, options.schema));
         },
         deleteMany: async ({ model, where }) => {
           let query = `delete ${moduleName}::${model}`;
@@ -182,7 +182,7 @@ export const gelAdapter = (db: Client, config: GelAdapterConfig) =>
 
           options.debugLog("[Delete Many] Query: ", query);
 
-          return (await db.query(query, formatFilterParams(where))).length;
+          return (await db.query(query, formatFilterParams(where, model, options.schema))).length;
         },
         createSchema: async ({ tables, file = `./dbschema/${config.moduleName}.gel` }) => {
           let rootScalarEnumTypes: Record<Capitalize<string>, string> = {};

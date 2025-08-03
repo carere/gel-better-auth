@@ -26,9 +26,9 @@
 - [x] Create operation for inserting new records `M`
 - [x] FindOne operation for querying single records with where clauses `M`
 - [x] FindMany operation for querying multiple records `S`
-- [ ] Update/UpdateMany operations for record modification `L`
+- [x] Update/UpdateMany operations for record modification `L`
 - [x] Delete/DeleteMany operations for record removal `S`
-- [ ] Count operation for record counting `S`
+- [x] Count operation for record counting `S`
 
 ### Dependencies
 
@@ -45,7 +45,6 @@
 
 - [x] Refactor type mapping into reusable function (reduce repetition) `L`
 - [ ] Add indexes to schema generation `M`
-- [ ] Performance benchmarking suite `L`
 
 ### Dependencies
 
@@ -61,9 +60,7 @@
 ### Features
 
 - [ ] Full validation against Better Auth test suite `L`
-- [ ] Usage examples and tutorials `M`
-- [ ] README documentation for basic usage
-- [ ] npm package publication `S`
+- [ ] README documentation for installation and usage `L`
 - [ ] Community contribution guidelines `S`
 
 ### Dependencies

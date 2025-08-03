@@ -92,17 +92,35 @@ export const whereClause = (
   );
 };
 
-export const formatFilterParams = (where: CleanedWhere[] | undefined) => {
-  return where
-    ? mapToObj(where, (v) => [
-        `${FILTER_PREFIX}${v.field}`,
-        match(v.operator)
-          .with("contains", () => `%${v.value}%`)
-          .with("starts_with", () => `${v.value}%`)
-          .with("ends_with", () => `%${v.value}`)
-          .otherwise(() => v.value),
-      ])
-    : undefined;
+export const formatFilterParams = (
+  where: CleanedWhere[] | undefined,
+  model: string,
+  schema: BetterAuthDbSchema,
+) => {
+  if (!where) return undefined;
+
+  const fieldMapping = getModelFieldNameMapping(model, schema);
+  const defaultUuid = "00000000-0000-0000-0000-000000000000";
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  return mapToObj(where, (v) => {
+    const fieldAttributes = fieldMapping[v.field];
+    const isIdField = v.field === "id";
+    const isReferenceField = fieldAttributes?.references !== undefined;
+
+    let value = match(v.operator)
+      .with("contains", () => `%${v.value}%`)
+      .with("starts_with", () => `${v.value}%`)
+      .with("ends_with", () => `%${v.value}`)
+      .otherwise(() => v.value);
+
+    // Replace invalid UUIDs with default UUID for id and reference fields
+    if ((isIdField || isReferenceField) && typeof value === "string" && !uuidRegex.test(value)) {
+      value = defaultUuid;
+    }
+
+    return [`${FILTER_PREFIX}${fieldAttributes?.fieldName ?? v.field}`, value];
+  });
 };
 
 export const selectClause = (model: string, schema: BetterAuthDbSchema, select?: string[]) => {
