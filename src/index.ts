@@ -27,13 +27,13 @@ interface GelAdapterConfig {
   indexes?: Record<string, Array<string | string[]>>;
 }
 
-export const gelAdapter = (db: Client, config: GelAdapterConfig) =>
+export const gelAdapter = (db: Client, config?: GelAdapterConfig) =>
   createAdapter({
     config: {
       adapterId: "gel-adapter",
       adapterName: "Gel Adapter",
       usePlural: false,
-      debugLogs: config.debugLogs ?? false,
+      debugLogs: config?.debugLogs ?? false,
       disableIdGeneration: true,
       supportsJSON: true,
       supportsDates: true,
@@ -41,7 +41,7 @@ export const gelAdapter = (db: Client, config: GelAdapterConfig) =>
       supportsNumericIds: false,
     },
     adapter: (options) => {
-      const moduleName = config.moduleName ?? "default";
+      const moduleName = config?.moduleName ?? "default";
 
       return {
         create: async ({ data, model, select }) => {
@@ -196,7 +196,7 @@ export const gelAdapter = (db: Client, config: GelAdapterConfig) =>
           const schema = pipe(
             values(tables),
             map(({ modelName, fields }) => {
-              const modelIndexes = config.indexes?.[modelName];
+              const modelIndexes = config?.indexes?.[modelName];
               const { scalarEnumTypes, fields: fieldStr } = generateFieldsString(
                 fields,
                 modelIndexes,

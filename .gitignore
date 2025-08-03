@@ -10,6 +10,11 @@ dist
 coverage
 *.lcov
 
+# claude code
+.agent-os/
+.claude/
+.mcp.json
+
 # uneeded files
 auth.ts
 

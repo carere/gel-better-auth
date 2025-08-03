@@ -234,7 +234,7 @@ export const generateFieldsString = (
           map((index) => {
             if (Array.isArray(index)) {
               // Composite index
-              return `index on (${index.map((field) => `.${field}`).join(", ")});`;
+              return `index on ((${index.map((field) => `.${field}`).join(", ")}));`;
             }
             // Single field index
             return `index on (.${index});`;
