@@ -164,7 +164,10 @@ export const updateClause = (
 export const formatUpdateParams = (update: Record<string, unknown>) =>
   mapKeys(update, (key) => `${PARAMS_PREFIX}${key}`);
 
-export const generateFieldsString = (fields: Record<string, FieldAttribute<FieldType>>) => {
+export const generateFieldsString = (
+  fields: Record<string, FieldAttribute<FieldType>>,
+  indexes?: Array<string | string[]>,
+) => {
   const scalarEnumTypes: Record<Capitalize<string>, string> = {};
   const referenceStr: string[] = [];
 
@@ -218,6 +221,26 @@ export const generateFieldsString = (fields: Record<string, FieldAttribute<Field
         );
       })
       .concat(referenceStr)
+      .concat(
+        pipe(
+          indexes ?? [],
+          filter((index) => {
+            if (Array.isArray(index)) return true;
+            // Single field index - check if field doesn't have unique constraint or is a reference
+            const fieldAttr = fields[index];
+            if (!fieldAttr) return false;
+            return !fieldAttr.unique && !fieldAttr.references;
+          }),
+          map((index) => {
+            if (Array.isArray(index)) {
+              // Composite index
+              return `index on (${index.map((field) => `.${field}`).join(", ")});`;
+            }
+            // Single field index
+            return `index on (.${index});`;
+          }),
+        ),
+      )
       .join("\n    "),
   };
 };

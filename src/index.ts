@@ -1,5 +1,3 @@
-import { writeFile } from "node:fs/promises";
-import { join as nodeJoin } from "node:path";
 import { type AdapterDebugLogs, createAdapter } from "better-auth/adapters";
 import type { Client } from "gel";
 import { filter, join, keys, map, merge, pipe, values } from "remeda";
@@ -23,6 +21,10 @@ interface GelAdapterConfig {
    * defaults to "auth"
    */
   moduleName?: string;
+  /**
+   * The indexes to add to the schema.
+   */
+  indexes?: Record<string, Array<string | string[]>>;
 }
 
 export const gelAdapter = (db: Client, config: GelAdapterConfig) =>
@@ -137,7 +139,10 @@ export const gelAdapter = (db: Client, config: GelAdapterConfig) =>
 
           options.debugLog(query);
 
-          return (await db.query(query, formatFilterParams(where, model, options.schema))) as unknown as number;
+          return (await db.query(
+            query,
+            formatFilterParams(where, model, options.schema),
+          )) as unknown as number;
         },
         findOne: async ({ model, where, select }) => {
           const query = `
@@ -147,7 +152,9 @@ export const gelAdapter = (db: Client, config: GelAdapterConfig) =>
 
           options.debugLog("[Find One] Query: ", query);
 
-          return (await db.query(query, formatFilterParams(where, model, options.schema)))[0] as null;
+          return (
+            await db.query(query, formatFilterParams(where, model, options.schema))
+          )[0] as null;
         },
         findMany: async ({ model, where, limit, sortBy, offset }) => {
           let query = `select ${moduleName}::${model} { * }`;
@@ -184,12 +191,16 @@ export const gelAdapter = (db: Client, config: GelAdapterConfig) =>
 
           return (await db.query(query, formatFilterParams(where, model, options.schema))).length;
         },
-        createSchema: async ({ tables, file = `./dbschema/${config.moduleName}.gel` }) => {
+        createSchema: async ({ tables, file = `./dbschema/${moduleName}.gel` }) => {
           let rootScalarEnumTypes: Record<Capitalize<string>, string> = {};
           const schema = pipe(
             values(tables),
             map(({ modelName, fields }) => {
-              const { scalarEnumTypes, fields: fieldStr } = generateFieldsString(fields);
+              const modelIndexes = config.indexes?.[modelName];
+              const { scalarEnumTypes, fields: fieldStr } = generateFieldsString(
+                fields,
+                modelIndexes,
+              );
               rootScalarEnumTypes = merge(rootScalarEnumTypes, scalarEnumTypes);
               return `  type ${modelName} {\n    ${fieldStr}\n  };`;
             }),
@@ -203,8 +214,6 @@ export const gelAdapter = (db: Client, config: GelAdapterConfig) =>
               return `module ${moduleName} {\n\n${scalarEnumTypesString}${schemaStr}\n}\n`;
             },
           );
-
-          await writeFile(nodeJoin(process.cwd(), file), schema);
 
           return { path: file, append: false, overwrite: true, code: schema };
         },

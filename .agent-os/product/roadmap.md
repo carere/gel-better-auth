@@ -44,7 +44,7 @@
 ### Features
 
 - [x] Refactor type mapping into reusable function (reduce repetition) `L`
-- [ ] Add indexes to schema generation `M`
+- [x] Add indexes to schema generation `M`
 
 ### Dependencies
 

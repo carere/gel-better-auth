@@ -1,4 +1,4 @@
-module auth {
+module test {
 
   type user {
     required name: str;
@@ -9,6 +9,7 @@ module auth {
     image: str;
     required createdAt: datetime;
     required updatedAt: datetime;
+    index on (.name, .createdAt);
   };
 
   type session {
@@ -23,8 +24,8 @@ module auth {
     required user: user {
       on target delete delete source;
     }
-    activeOrganizationId: str;
     userId := .user.id;
+    index on (.expiresAt);
   };
 
   type account {
@@ -43,6 +44,7 @@ module auth {
     required createdAt: datetime;
     required updatedAt: datetime;
     userId := .user.id;
+    index on (.providerId, .accountId);
   };
 
   type verification {
@@ -51,36 +53,5 @@ module auth {
     required expiresAt: datetime;
     createdAt: datetime;
     updatedAt: datetime;
-    index on (.identifier);
-  };
-
-  type organization {
-    required name: str;
-    slug: str {
-      constraint exclusive;
-    }
-    logo: str;
-    required createdAt: datetime;
-    metadata: str;
-  };
-
-  type member {
-    required organization: organization;
-    required user: user;
-    required role: str;
-    required createdAt: datetime;
-    organizationId := .organization.id;
-    userId := .user.id;
-  };
-
-  type invitation {
-    required organization: organization;
-    required email: str;
-    role: str;
-    required status: str;
-    required expiresAt: datetime;
-    required user: user;
-    organizationId := .organization.id;
-    inviterId := .user.id;
   };
 }
