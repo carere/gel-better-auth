@@ -20,15 +20,16 @@ module auth {
     required updatedAt: datetime;
     ipAddress: str;
     userAgent: str;
-    required userId: user {
+    required user: user {
       on target delete delete source;
     }
+    userId := .user.id;
   };
 
   type account {
     required accountId: str;
     required providerId: str;
-    required userId: user {
+    required user: user {
       on target delete delete source;
     }
     accessToken: str;
@@ -40,6 +41,7 @@ module auth {
     password: str;
     required createdAt: datetime;
     required updatedAt: datetime;
+    userId := .user.id;
   };
 
   type verification {

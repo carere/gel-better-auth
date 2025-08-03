@@ -4,10 +4,12 @@ import { type AdapterDebugLogs, createAdapter } from "better-auth/adapters";
 import type { Client } from "gel";
 import { filter, join, keys, map, merge, pipe, values } from "remeda";
 import {
-  formatWhereParams,
+  formatFilterParams,
+  formatUpdateParams,
   generateFieldsString,
   getGelType,
   selectClause,
+  updateClause,
   whereClause,
 } from "./utils";
 
@@ -16,10 +18,6 @@ interface GelAdapterConfig {
    * Helps you debug issues with the adapter.
    */
   debugLogs?: AdapterDebugLogs;
-  /**
-   * If the table names in the schema are plural.
-   */
-  usePlural?: boolean;
   /**
    * The name of the generated module.
    * defaults to "auth"
@@ -32,7 +30,7 @@ export const gelAdapter = (db: Client, config: GelAdapterConfig) =>
     config: {
       adapterId: "gel-adapter",
       adapterName: "Gel Adapter",
-      usePlural: config.usePlural ?? false,
+      usePlural: false,
       debugLogs: config.debugLogs ?? false,
       disableIdGeneration: true,
       supportsJSON: true,
@@ -41,6 +39,8 @@ export const gelAdapter = (db: Client, config: GelAdapterConfig) =>
       supportsNumericIds: false,
     },
     adapter: (options) => {
+      const moduleName = config.moduleName ?? "default";
+
       return {
         create: async ({ data, model, select }) => {
           const dataKeys = keys(data) as string[];
@@ -48,7 +48,7 @@ export const gelAdapter = (db: Client, config: GelAdapterConfig) =>
 
           const query = `
           select (
-            insert ${config.moduleName ?? "default"}::${model} {
+            insert ${moduleName}::${model} {
               ${pipe(
                 fieldKeys,
                 filter((key) =>
@@ -57,6 +57,10 @@ export const gelAdapter = (db: Client, config: GelAdapterConfig) =>
                 map((key) => {
                   const fieldName = options.getFieldName({ model, field: key });
                   const fieldAttributes = options.getFieldAttributes({ model, field: key });
+                  if (fieldAttributes.references) {
+                    const refModel = fieldAttributes.references.model;
+                    return `${refModel} := (select ${moduleName}::${refModel} filter .id = <uuid>$${fieldName})`;
+                  }
                   return `${key} := <${getGelType(key, fieldAttributes.type, fieldName)}>$${fieldName}`;
                 }),
                 join(", "),
@@ -70,14 +74,48 @@ export const gelAdapter = (db: Client, config: GelAdapterConfig) =>
 
           return await db.queryRequiredSingle(query, data);
         },
-        update: async () => {
-          throw new Error("Not implemented");
+        update: async ({ model, update, where }) => {
+          let query = `update ${moduleName}::${model}`;
+
+          if (where.length > 0) {
+            query += ` filter ${whereClause(where, model, options.schema)}`;
+          }
+
+          query += ` set { ${updateClause(update as Record<string, unknown>, model, options.schema)} }`;
+
+          query = `select (${query}) { ${selectClause(model, options.schema, [])} } limit 1`;
+
+          options.debugLog("[Update] Query: ", query);
+
+          return (
+            await db.query(query, {
+              ...formatFilterParams(where),
+              ...formatUpdateParams(update as Record<string, unknown>),
+            })
+          )[0] as null;
         },
-        updateMany: async () => {
-          throw new Error("Not implemented");
+        updateMany: async ({ model, update, where }) => {
+          let query = `update ${moduleName}::${model}`;
+
+          if (where.length > 0) {
+            query += ` filter ${whereClause(where, model, options.schema)}`;
+          }
+
+          query += ` set { ${updateClause(update as Record<string, unknown>, model, options.schema)} }`;
+
+          query = `select (${query}) { ${selectClause(model, options.schema, [])} }`;
+
+          options.debugLog("[Update Many] Query: ", query);
+
+          return (
+            await db.query(query, {
+              ...formatFilterParams(where),
+              ...formatUpdateParams(update as Record<string, unknown>),
+            })
+          ).length;
         },
         delete: async ({ model, where }) => {
-          let query = `delete ${config.moduleName ?? "default"}::${model}`;
+          let query = `delete ${moduleName}::${model}`;
 
           if (where && where.length > 0) {
             query += ` filter ${whereClause(where, model, options.schema)}`;
@@ -85,23 +123,34 @@ export const gelAdapter = (db: Client, config: GelAdapterConfig) =>
 
           options.debugLog("[Delete] Query: ", query);
 
-          await db.query(query, formatWhereParams(where));
+          await db.query(query, formatFilterParams(where));
         },
-        count: async () => {
-          throw new Error("Not implemented");
+        count: async ({ model, where }) => {
+          let query = `select ${moduleName}::${model}`;
+
+          if (where && where.length > 0) {
+            const whereConditions = whereClause(where, model, options.schema);
+            query += ` filter ${whereConditions}`;
+          }
+
+          query = `select count ((${query}))`;
+
+          options.debugLog(query);
+
+          return (await db.query(query, formatFilterParams(where))) as unknown as number;
         },
         findOne: async ({ model, where, select }) => {
           const query = `
-          select ${config.moduleName ?? "default"}::${model} {
+          select ${moduleName}::${model} {
             ${selectClause(model, options.schema, select)}
           } filter ${whereClause(where, model, options.schema)} limit 1`;
 
           options.debugLog("[Find One] Query: ", query);
 
-          return await db.queryRequiredSingle(query, formatWhereParams(where));
+          return (await db.query(query, formatFilterParams(where)))[0] as null;
         },
         findMany: async ({ model, where, limit, sortBy, offset }) => {
-          let query = `select ${config.moduleName ?? "default"}::${model} { * }`;
+          let query = `select ${moduleName}::${model} { * }`;
 
           if (where && where.length > 0) {
             const whereConditions = whereClause(where, model, options.schema);
@@ -122,10 +171,10 @@ export const gelAdapter = (db: Client, config: GelAdapterConfig) =>
 
           options.debugLog("[Find Many] Query: ", query);
 
-          return await db.query(query, formatWhereParams(where));
+          return await db.query(query, formatFilterParams(where));
         },
         deleteMany: async ({ model, where }) => {
-          let query = `delete ${config.moduleName ?? "default"}::${model}`;
+          let query = `delete ${moduleName}::${model}`;
 
           if (where && where.length > 0) {
             query += ` filter ${whereClause(where, model, options.schema)}`;
@@ -133,7 +182,7 @@ export const gelAdapter = (db: Client, config: GelAdapterConfig) =>
 
           options.debugLog("[Delete Many] Query: ", query);
 
-          return (await db.query(query, formatWhereParams(where))).length;
+          return (await db.query(query, formatFilterParams(where))).length;
         },
         createSchema: async ({ tables, file = `./dbschema/${config.moduleName}.gel` }) => {
           let rootScalarEnumTypes: Record<Capitalize<string>, string> = {};
@@ -151,7 +200,7 @@ export const gelAdapter = (db: Client, config: GelAdapterConfig) =>
                   ? `  ${values(rootScalarEnumTypes).join("\n  ")}\n\n`
                   : "";
 
-              return `module ${config.moduleName} {\n\n${scalarEnumTypesString}${schemaStr}\n}\n`;
+              return `module ${moduleName} {\n\n${scalarEnumTypesString}${schemaStr}\n}\n`;
             },
           );
 

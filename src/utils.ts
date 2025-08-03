@@ -1,7 +1,10 @@
 import type { CleanedWhere } from "better-auth/adapters";
 import type { BetterAuthDbSchema, FieldAttribute, FieldType } from "better-auth/db";
-import { capitalize, entries, filter, join, keys, map, mapToObj, pipe } from "remeda";
+import { capitalize, entries, filter, join, keys, map, mapKeys, mapToObj, pipe } from "remeda";
 import { match } from "ts-pattern";
+
+const FILTER_PREFIX = "filter_";
+const PARAMS_PREFIX = "params_";
 
 export const getGelType = (
   field: string,
@@ -41,7 +44,7 @@ export const getModelFieldNameMapping = (
 ): Record<string, FieldAttribute<FieldType>> => {
   const fields = schema[model]?.fields;
 
-  if (!fields) throw new Error(`Model ${model} not found in schema`);
+  if (!fields) throw new Error(`[Gel Adapter] Model ${model} not found in schema`);
 
   const mapping: Record<string, FieldAttribute<FieldType>> = {};
 
@@ -71,17 +74,35 @@ export const whereClause = (
       return pipe(index === 0 ? "" : connector === "AND" ? "and " : "or ", (str) => {
         const gelOperator = getGelOperator(operator);
         const gelType = getGelType(field, fieldAttributes.type, actualFieldName, operator);
+        const isReferencing = fieldAttributes.references !== undefined;
 
         return match(operator)
           .with(
             "in",
-            () => `${str}.${field} ${gelOperator} array_unpack(<${gelType}>$${actualFieldName})`,
+            () =>
+              `${str}.${isReferencing ? `${fieldAttributes.references?.model}.id` : field} ${gelOperator} array_unpack(<${isReferencing ? "uuid" : gelType}>$${FILTER_PREFIX}${actualFieldName})`,
           )
-          .otherwise(() => `${str}.${field} ${gelOperator} <${gelType}>$${actualFieldName}`);
+          .otherwise(
+            () =>
+              `${str}.${isReferencing ? `${fieldAttributes.references?.model}.id` : field} ${gelOperator} <${isReferencing ? "uuid" : gelType}>$${FILTER_PREFIX}${actualFieldName}`,
+          );
       });
     }),
     join("\n"),
   );
+};
+
+export const formatFilterParams = (where: CleanedWhere[] | undefined) => {
+  return where
+    ? mapToObj(where, (v) => [
+        `${FILTER_PREFIX}${v.field}`,
+        match(v.operator)
+          .with("contains", () => `%${v.value}%`)
+          .with("starts_with", () => `${v.value}%`)
+          .with("ends_with", () => `%${v.value}`)
+          .otherwise(() => v.value),
+      ])
+    : undefined;
 };
 
 export const selectClause = (model: string, schema: BetterAuthDbSchema, select?: string[]) => {
@@ -90,7 +111,9 @@ export const selectClause = (model: string, schema: BetterAuthDbSchema, select?:
 
   return pipe(
     fieldKeys,
-    filter((key) => (select ? select.includes(fieldMapping[key]?.fieldName ?? key) : true)),
+    filter((key) =>
+      select && select.length > 0 ? select.includes(fieldMapping[key]?.fieldName ?? key) : true,
+    ),
     map((key) => {
       let keyStr = `${key}`;
       if (fieldMapping[key]?.fieldName && fieldMapping[key].fieldName !== key)
@@ -101,8 +124,31 @@ export const selectClause = (model: string, schema: BetterAuthDbSchema, select?:
   );
 };
 
+export const updateClause = (
+  update: Record<string, unknown>,
+  model: string,
+  schema: BetterAuthDbSchema,
+) => {
+  const fieldMapping = getModelFieldNameMapping(model, schema);
+  const fieldKeys = keys(schema[model]?.fields ?? {});
+  const updateKeys = keys(update);
+
+  return pipe(
+    fieldKeys,
+    filter((key) => (updateKeys ? updateKeys.includes(fieldMapping[key]?.fieldName ?? key) : true)),
+    map((key) => {
+      return `${key} := <${getGelType(key, fieldMapping[key]?.type ?? "string", key)}>$${PARAMS_PREFIX}${fieldMapping[key]?.fieldName ?? key}`;
+    }),
+    join(", "),
+  );
+};
+
+export const formatUpdateParams = (update: Record<string, unknown>) =>
+  mapKeys(update, (key) => `${PARAMS_PREFIX}${key}`);
+
 export const generateFieldsString = (fields: Record<string, FieldAttribute<FieldType>>) => {
   const scalarEnumTypes: Record<Capitalize<string>, string> = {};
+  const referenceStr: string[] = [];
 
   return {
     scalarEnumTypes,
@@ -135,6 +181,8 @@ export const generateFieldsString = (fields: Record<string, FieldAttribute<Field
 
         if (references) {
           kind = references.model;
+          fieldName = references.model;
+          referenceStr.push(`${key} := .${fieldName}.id;`);
           if (references.onDelete === "cascade") {
             constraints.push("on target delete delete source");
           }
@@ -151,19 +199,7 @@ export const generateFieldsString = (fields: Record<string, FieldAttribute<Field
           (str) => (constraints.length > 0 ? str : `${str};`),
         );
       })
+      .concat(referenceStr)
       .join("\n    "),
   };
-};
-
-export const formatWhereParams = (where: CleanedWhere[] | undefined) => {
-  return where
-    ? mapToObj(where, (v) => [
-        v.field,
-        match(v.operator)
-          .with("contains", () => `%${v.value}%`)
-          .with("starts_with", () => `${v.value}%`)
-          .with("ends_with", () => `%${v.value}`)
-          .otherwise(() => v.value),
-      ])
-    : undefined;
 };

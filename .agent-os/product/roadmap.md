@@ -43,7 +43,7 @@
 
 ### Features
 
-- [ ] Refactor type mapping into reusable function (reduce repetition) `L`
+- [x] Refactor type mapping into reusable function (reduce repetition) `L`
 - [ ] Add indexes to schema generation `M`
 - [ ] Performance benchmarking suite `L`
 
