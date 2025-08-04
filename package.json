@@ -1,9 +1,7 @@
 {
   "name": "@carere/gel-better-auth",
   "version": "0.1.1",
-  "author": "Kevin Abatan <abatan.k@gmail.com> (https://github.com/carere)",
   "description": "Adapter for Better Auth and Gel/EdgeDB",
-  "type": "module",
   "keywords": [
     "better-auth",
     "gel",
@@ -15,47 +13,42 @@
     "auth"
   ],
   "homepage": "https://github.com/carere/gel-better-auth",
-  "publishConfig": {
-    "access": "public"
-  },
   "bugs": "https://github.com/carere/gel-better-auth/issues",
   "repository": {
     "type": "git",
     "url": "https://github.com/carere/gel-better-auth.git"
   },
   "license": "MIT",
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
-  "commitlint": {
-    "extends": [
-      "@commitlint/config-conventional"
-    ]
-  },
-  "scripts": {
-    "build": "tsup",
-    "check": "biome check .",
-    "knip": "knip",
-    "compile": "tsc --build",
-    "test": "vitest"
-  },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "author": "Kevin Abatan <abatan.k@gmail.com> (https://github.com/carere)",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     }
   },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "check": "biome check .",
+    "compile": "tsc --build",
+    "knip": "knip",
+    "test": "vitest"
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  },
   "dependencies": {
     "remeda": "^2.26.1",
     "ts-pattern": "^5.7.1"
-  },
-  "peerDependencies": {
-    "better-auth": "^1.2.12",
-    "gel": "^2.1.1"
   },
   "devDependencies": {
     "@biomejs/biome": "latest",
@@ -68,5 +61,12 @@
     "tsup": "latest",
     "typescript": "latest",
     "vitest": "latest"
+  },
+  "peerDependencies": {
+    "better-auth": "^1.2.12",
+    "gel": "^2.1.1"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
