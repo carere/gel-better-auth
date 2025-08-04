@@ -1,6 +1,6 @@
 {
   "name": "@carere/gel-better-auth",
-  "version": "0.1.1",
+  "version": "1.0.0",
   "description": "Adapter for Better Auth and Gel/EdgeDB",
   "keywords": [
     "better-auth",
