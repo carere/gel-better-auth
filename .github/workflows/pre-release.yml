@@ -1,14 +1,16 @@
-name: Release
+name: Pre-Release
 
 on:
   workflow_dispatch:
 
 jobs:
-  create-pre-release:
-    if: github.event_name == 'workflow_dispatch'
+  pre-release:
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     permissions:
       contents: write
+      pull-requests: write
     steps:
       - name: Git Checkout
         uses: actions/checkout@v4

@@ -58,11 +58,17 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NPM_CONFIG_TOKEN: ${{ secrets.NPM_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     permissions:
       contents: write
     steps:
       - name: Git Checkout
         uses: actions/checkout@v4
+
+      - name: Set up Git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
@@ -79,8 +85,11 @@ jobs:
         run: |
           gh release upload ${{ needs.get-tag.outputs.tag_name }} ${{ env.ARTIFACT_NAME }}
           gh release edit ${{ needs.get-tag.outputs.tag_name }} --draft=false --latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create tag
+        run: |
+          git tag ${{ needs.get-tag.outputs.tag_name }}
+          git push origin ${{ needs.get-tag.outputs.tag_name }}
 
       - name: Publish package
         run: bun publish ${{ env.ARTIFACT_NAME }}

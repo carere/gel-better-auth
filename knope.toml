@@ -28,8 +28,7 @@ command = "git add ."
 
 [[workflows.steps]]
 type = "Command"
-command = "git commit -m \"chore: prepare release {version}\""
-variables = { "{version}" = "Version" }
+command = "git commit -m \"chore: prepare release $version\""
 
 [[workflows.steps]]
 type = "Command"
@@ -40,9 +39,11 @@ type = "CreatePullRequest"
 base = "main"
 
 [workflows.steps.title]
-template = "chore: release {version}"
-variables = { "{version}" = "Version" }
+template = "chore: release $version"
 
 [workflows.steps.body]
-template = "Merging this PR will release the following:\n\n{changelog}"
-variables = { "{changelog}" = "ChangelogEntry" }
+template = "Merging this PR will release the following:\n\n$changelog"
+
+[[workflows.steps]]
+type = "Command"
+command = "gh release create $version --draft --title \"$version\" --note \"$changelog\""
