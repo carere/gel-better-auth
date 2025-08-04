@@ -17,14 +17,23 @@ jobs:
         with:
           bun-version: latest
 
+      - name: Setup Gel
+        uses: geldata/setup-gel@v1
+
       - name: Install dependencies
         run: bun install
 
       - name: TypeScript Check
         run: bun run compile
 
-      - name: Biome Check
+      - name: Biome Lint + Format
         run: bun run check
+
+      - name: Generate Schema
+        run: bun run generate
+
+      - name: Migrate Gel
+        run: gel migrate --dev-mode
 
       - name: Better Auth Test Suite
         run: bun run test
