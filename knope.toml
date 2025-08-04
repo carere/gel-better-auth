@@ -42,7 +42,7 @@ base = "main"
 template = "chore: release $version"
 
 [workflows.steps.body]
-template = "Merging this PR will release the following:\n\n$changelog"
+template = "Changes shipped with the release:\n\n$changelog"
 
 [[workflows.steps]]
 type = "Command"
