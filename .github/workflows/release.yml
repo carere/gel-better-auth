@@ -6,12 +6,28 @@ on:
     branches: [main]
   workflow_dispatch:
 
+env:
+  ARTIFACT_NAME: gel-better-auth.tgz
+
 jobs:
-  release:
+  get-tag:
     if: (github.head_ref == 'knope/release' && github.event.pull_request.merged == true) || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    env:
-      NPM_CONFIG_TOKEN: ${{ secrets.NPM_TOKEN }}
+    permissions:
+      contents: write
+    steps:
+      - name: "Get tag of draft release"
+        run: echo "tag_name=$(gh release list --repo ${{ github.repository }} --json 'isDraft,tagName' --jq '.[] | select(.isDraft) | .tagName')" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ github.token }}
+        id: get-tag
+    outputs:
+      tag_name: ${{ steps.get-tag.outputs.tag_name }}
+
+  build-artifacts:
+    needs: [get-tag]
+    if: needs.get-tag.outputs.tag_name != ''
+    runs-on: ubuntu-latest
     steps:
       - name: Git Checkout
         uses: actions/checkout@v4
@@ -22,10 +38,50 @@ jobs:
           bun-version: latest
 
       - name: Install dependencies
-        run: bun install
+        run: bun ci
 
       - name: Build project
         run: bun run build
 
+      - name: Create artifact
+        run: bun pm pack --filename ${{ env.ARTIFACT_NAME }}
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: Gel Better Auth
+          path: ${{ env.ARTIFACT_NAME }}
+          if-no-files-found: error
+
+  release:
+    needs: [build-artifacts, get-tag]
+    runs-on: ubuntu-latest
+    env:
+      NPM_CONFIG_TOKEN: ${{ secrets.NPM_TOKEN }}
+    permissions:
+      contents: write
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: .
+          merge-multiple: true
+
       - name: Publish package
-        run: bun publish -p
+        run: bun publish ${{ env.ARTIFACT_NAME }}
+
+      - name: Upload artifacts to release
+        run: |
+          gh release upload ${{ needs.get-tag.outputs.tag_name }} ${{ env.ARTIFACT_NAME }}
+          gh release edit ${{ needs.get-tag.outputs.tag_name }} --draft=false --latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
