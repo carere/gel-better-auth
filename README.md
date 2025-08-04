@@ -4,7 +4,7 @@
     <img src="images/gel-better-auth-banner.svg" alt="Gel + Better Auth" width="50%">
   </a>
 
-  <h2 align="center">Gel Better Auth</h1>
+  <h1 style="font-size: 3rem; font-weight: 600;">Gel Better Auth</h1>
 
   <p align="center">
     Gel adapter for Better Auth
