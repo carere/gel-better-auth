@@ -1,3 +1,9 @@
+## 1.0.1 (2025-08-04)
+
+### Fixes
+
+- use gh cli insted of knope step for creating PR
+
 ## 0.1.1 (2025-08-04)
 
 ### Features
