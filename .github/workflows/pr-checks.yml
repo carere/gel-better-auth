@@ -30,7 +30,7 @@ jobs:
         run: bun run check
 
       - name: Generate Schema
-        run: bun run generate
+        run: bunx @better-auth/cli generate
 
       - name: Migrate Gel
         run: gel migrate --dev-mode
@@ -38,5 +38,5 @@ jobs:
       - name: Better Auth Test Suite
         run: bun run test
 
-      - name: Build
+      - name: Build test
         run: bun run build

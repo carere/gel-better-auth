@@ -39,8 +39,7 @@
     "check": "biome check .",
     "knip": "knip",
     "compile": "tsc --build",
-    "test": "vitest",
-    "generate": "bunx @better-auth/cli generate"
+    "test": "vitest"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

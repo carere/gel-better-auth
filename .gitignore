@@ -15,9 +15,6 @@ coverage
 .claude/
 .mcp.json
 
-# uneeded files
-auth.ts
-
 # logs
 logs
 _.log
