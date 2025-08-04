@@ -10,6 +10,9 @@ dist
 coverage
 *.lcov
 
+# Gel
+dbschema
+
 # claude code
 .agent-os/
 .claude/
