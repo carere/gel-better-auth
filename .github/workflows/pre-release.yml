@@ -7,8 +7,6 @@ jobs:
   pre-release:
     if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     permissions:
       contents: write
       pull-requests: write
@@ -36,3 +34,5 @@ jobs:
 
       - name: Run Knope Pre-Release
         run: knope pre-release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
