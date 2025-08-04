@@ -10,7 +10,7 @@ export const auth = betterAuth({
       account: ["userId"],
       session: ["userId", "token"],
       verification: ["identifier"],
-      organization: ["slug"]
+      organization: ["slug"],
     },
   }),
 });
