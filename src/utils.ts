@@ -27,7 +27,7 @@ export const getGelType = (
     .otherwise(() => capitalize(fieldName ?? field));
 };
 
-export const getGelOperator = (operator: string): string =>
+const getGelOperator = (operator: string): string =>
   match(operator)
     .with("eq", () => "=")
     .with("ne", () => "!=")
@@ -38,7 +38,7 @@ export const getGelOperator = (operator: string): string =>
     .with("in", () => "in")
     .otherwise(() => "like");
 
-export const getModelFieldNameMapping = (
+const getModelFieldNameMapping = (
   model: string,
   schema: BetterAuthDbSchema,
 ): Record<string, FieldAttribute<FieldType>> => {
@@ -234,7 +234,7 @@ export const generateFieldsString = (
           map((index) => {
             if (Array.isArray(index)) {
               // Composite index
-              return `index on (${index.map((field) => `.${field}`).join(", ")});`;
+              return `index on ((${index.map((field) => `.${field}`).join(", ")}));`;
             }
             // Single field index
             return `index on (.${index});`;

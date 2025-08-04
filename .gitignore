@@ -10,8 +10,13 @@ dist
 coverage
 *.lcov
 
-# uneeded files
-auth.ts
+# Gel
+dbschema/
+
+# claude code
+.agent-os/
+.claude/
+.mcp.json
 
 # logs
 logs
