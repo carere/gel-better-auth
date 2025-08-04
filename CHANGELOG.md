@@ -1,3 +1,9 @@
+## 1.0.1 (2025-08-04)
+
+### Fixes
+
+- replace wrong options in gh release
+
 ## 0.1.1 (2025-08-04)
 
 ### Features
