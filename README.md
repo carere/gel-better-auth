@@ -13,6 +13,8 @@
     &middot;
     <a href="https://github.com/carere/gel-better-auth/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
   </p>
+
+  [![Quality Assurance](https://github.com/carere/gel-better-auth/actions/workflows/quality-assurance.yml/badge.svg)](https://github.com/carere/gel-better-auth/actions/workflows/quality-assurance.yml)
 </div>
 
 ## About The Project
