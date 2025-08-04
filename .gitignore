@@ -11,7 +11,7 @@ coverage
 *.lcov
 
 # Gel
-dbschema
+dbschema/
 
 # claude code
 .agent-os/

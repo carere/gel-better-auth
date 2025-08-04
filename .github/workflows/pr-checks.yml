@@ -30,7 +30,7 @@ jobs:
         run: bun run check
 
       - name: Generate Schema
-        run: bunx @better-auth/cli generate --yes
+        run: bunx @better-auth/cli generate --y
 
       - name: Migrate Gel
         run: gel migrate --dev-mode
