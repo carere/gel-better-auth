@@ -1,4 +1,4 @@
-name: PR Checks
+name: Quality Checks
 
 on:
   pull_request:
@@ -21,7 +21,7 @@ jobs:
         uses: geldata/setup-gel@v1
 
       - name: Install dependencies
-        run: bun install
+        run: bun ci
 
       - name: TypeScript Check
         run: bun run compile
