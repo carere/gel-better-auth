@@ -1,6 +1,6 @@
 {
   "name": "@carere/gel-better-auth",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "Kevin Abatan <abatan.k@gmail.com> (https://github.com/carere)",
   "description": "Adapter for Better Auth and Gel/EdgeDB",
   "type": "module",
