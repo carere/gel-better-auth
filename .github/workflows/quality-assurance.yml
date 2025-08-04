@@ -1,6 +1,8 @@
 name: Quality Assurance
 
 on:
+  pull_request:
+    types: [opened]
   push:
 
 jobs:
