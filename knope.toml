@@ -40,4 +40,4 @@ command = "gh pr create -b main -t \"chore: release $version\" -b \"Changes ship
 
 [[workflows.steps]]
 type = "Command"
-command = "gh release create $version --draft --title \"$version\" --note \"$changelog\""
+command = "gh release create $version --draft --title \"$version\" --notes \"$changelog\""
