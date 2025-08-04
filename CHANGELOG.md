@@ -2,16 +2,9 @@
 
 ### Features
 
-- update README + update ci
-- add indexes support
-- passing all better-auth tests
-- adding more operations and test success to the mix
-- add delete / delete many operations
-- adding findMany & several helpers for qol
-- adding wip create & findOne implementation
-- enabling declaring multiple times the same literals
-- finishing schema generation
-
-### Fixes
-
-- bad formatting at the end of generated file
+- **🚀 Schema Generation**: Work out of the box with any Better Auth plugins.
+- **🔒 Cascading Delete**: Cascading delete is supported for all models.
+- **⚡ Indexes Support**: Works out of the box, see examples for more details.
+- **🛠 Constraints**: Unique flag are supported as native Gel's constraints.
+- **🎯 Scalar Types**: Literals are represented as Scalar Type in the schema !!
+- **🔥 Link instead of Id**: relations like `userId` are represented as computed property !!
