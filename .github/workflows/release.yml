@@ -11,7 +11,7 @@ env:
 
 jobs:
   get-tag:
-    if: (github.head_ref == 'knope/pre-release' && github.event.pull_request.merged == true) || (github.event_name == 'workflow_dispatch' && github.ref == 'main')
+    if: (github.head_ref == 'refs/heads/knope/pre-release' && github.event.pull_request.merged == true) || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     permissions:
       contents: write
