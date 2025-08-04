@@ -1,3 +1,9 @@
+## 1.1.0 (2025-08-04)
+
+### Features
+
+- activate qa workflow when pr is created
+
 ## 0.1.1 (2025-08-04)
 
 ### Features
