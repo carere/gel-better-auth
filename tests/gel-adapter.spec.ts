@@ -1,6 +1,6 @@
 import { runAdapterTest } from "better-auth/adapters/test";
 import { createClient } from "gel";
-import { beforeAll, describe } from "vitest";
+import { afterAll, describe } from "vitest";
 import { gelAdapter } from "../src";
 
 describe("Gel Adapter Tests", async () => {
@@ -12,7 +12,7 @@ describe("Gel Adapter Tests", async () => {
     },
   });
 
-  beforeAll(async () => {
+  afterAll(async () => {
     await db.execute("delete auth::session;");
     await db.execute("delete auth::account;");
     await db.execute("delete auth::user;");
