@@ -35,14 +35,8 @@ type = "Command"
 command = "git push origin -u knope/pre-release"
 
 [[workflows.steps]]
-type = "CreatePullRequest"
-base = "main"
-
-[workflows.steps.title]
-template = "chore: release $version"
-
-[workflows.steps.body]
-template = "Changes shipped with the release:\n\n$changelog"
+type = "Command"
+command = "gh pr create -b main -t \"chore: release $version\" -b \"Changes shipped with the release:\n\n$changelog\""
 
 [[workflows.steps]]
 type = "Command"
