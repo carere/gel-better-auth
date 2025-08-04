@@ -3,9 +3,47 @@ versioned_files = ["package.json"]
 changelog = "CHANGELOG.md"
 assets = "gel-better-auth.tgz"
 
-[bot.releases]
-enabled = true
-
 [github]
 owner = "carere"
 repo = "gel-better-auth"
+
+[[workflows]]
+name = "pre-release"
+help_text = "Create a pre-release for the project"
+
+[[workflows.steps]]
+type = "Command"
+command = "git checkout -b knope/pre-release"
+
+[[workflows.steps]]
+type = "PrepareRelease"
+
+[[workflows.steps]]
+type = "Command"
+command = "bun biome check --write ."
+
+[[workflows.steps]]
+type = "Command"
+command = "git add ."
+
+[[workflows.steps]]
+type = "Command"
+command = "git commit -m \"chore: prepare release $version\""
+
+[[workflows.steps]]
+type = "Command"
+command = "git push origin -u knope/pre-release"
+
+[[workflows.steps]]
+type = "CreatePullRequest"
+base = "main"
+
+[workflows.steps.title]
+template = "chore: release $version"
+
+[workflows.steps.body]
+template = "Merging this PR will release the following:\n\n$changelog"
+
+[[workflows.steps]]
+type = "Command"
+command = "gh release create $version --draft --title \"$version\" --note \"$changelog\""

@@ -11,12 +11,12 @@ env:
 
 jobs:
   get-tag:
-    if: (github.head_ref == 'knope/release' && github.event.pull_request.merged == true) || github.event_name == 'workflow_dispatch'
+    if: (github.head_ref == 'knope/pre-release' && github.event.pull_request.merged == true) || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: "Get tag of draft release"
+      - name: "Get tag of latest draft release"
         run: echo "tag_name=$(gh release list --repo ${{ github.repository }} --json 'isDraft,tagName' --jq '.[] | select(.isDraft) | .tagName')" >> $GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ github.token }}
@@ -47,9 +47,9 @@ jobs:
         run: bun pm pack --filename ${{ env.ARTIFACT_NAME }}
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v4
         with:
-          name: Gel Better Auth
+          name: gel-better-auth
           path: ${{ env.ARTIFACT_NAME }}
           if-no-files-found: error
 
@@ -58,11 +58,17 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NPM_CONFIG_TOKEN: ${{ secrets.NPM_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     permissions:
       contents: write
     steps:
       - name: Git Checkout
         uses: actions/checkout@v4
+
+      - name: Set up Git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
@@ -75,13 +81,16 @@ jobs:
           path: .
           merge-multiple: true
 
-      - name: Publish package
-        run: bun publish ${{ env.ARTIFACT_NAME }}
-
       - name: Upload artifacts to release
         run: |
           gh release upload ${{ needs.get-tag.outputs.tag_name }} ${{ env.ARTIFACT_NAME }}
           gh release edit ${{ needs.get-tag.outputs.tag_name }} --draft=false --latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create tag
+        run: |
+          git tag ${{ needs.get-tag.outputs.tag_name }}
+          git push origin ${{ needs.get-tag.outputs.tag_name }}
+
+      - name: Publish package
+        run: bun publish ${{ env.ARTIFACT_NAME }}
 
