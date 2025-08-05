@@ -11,10 +11,10 @@ env:
 
 jobs:
   get-tag:
-    if: (github.head_ref == 'refs/heads/knope/pre-release' && github.event.pull_request.merged == true) || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    if: (github.ref == 'refs/heads/knope/pre-release' && github.event.pull_request.merged == true) || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     steps:
       - name: "Get tag of latest draft release"
         run: echo "tag_name=$(gh release list --repo ${{ github.repository }} --json 'isDraft,tagName' --jq '.[] | select(.isDraft) | .tagName')" >> $GITHUB_OUTPUT
